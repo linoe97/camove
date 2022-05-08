@@ -5,8 +5,8 @@ from COMM_uart import COMM
 #MAIN
 
 #declaration of camera and uarrt comunication
-camera= CAM()
-comm=COMM()
+camera = CAM()
+comm = COMM()
 
 comm.set_camera(camera)
 
