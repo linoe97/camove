@@ -31,6 +31,7 @@
 #include <stdlib.h>
 #include <malloc.h>
 #include <stdio.h>
+#include <math.h>
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -64,8 +65,10 @@ void SystemClock_Config(void);
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
 uint8_t Rx_Data[10];
-char lenX[1];
-char lenY[1];
+uint8_t Tx_Data[10];
+
+char lenX;
+char lenY;
 char* X;
 char* Y;
 char* mex;
@@ -126,16 +129,16 @@ int main(void)
   //HAL_TIM_PWM_Start(&htim3, TIM_CHANNEL_1);
   htim2.Instance->CCR2=pwm2;
   htim2.Instance->CCR1=pwm1;
+
+
+
   /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
   while (1)
   {
-
-
     /* USER CODE END WHILE */
-
     /* USER CODE BEGIN 3 */
   }
   /* USER CODE END 3 */
@@ -193,10 +196,15 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
            the HAL_UART_RxCpltCallback could be implemented in the user file
    */
 	//HAL_UART_Transmit(&huart2,(uint8_t *)Rx_Data,10,100);
-    lenX[0]=Rx_Data[0];
-    lenY[0]=Rx_Data[1];
-	NX=atoi(lenX);
-	NY=atoi(lenY);
+	//HAL_GPIO_TogglePin(LD2_GPIO_Port, LD2_Pin); //led check
+
+    lenX=Rx_Data[0];
+    lenY=Rx_Data[1];
+	//NX=atoi(lenX);
+	//NY=atoi(lenY);
+    NX = (int) lenX - '0';
+    NY = (int) lenY - '0';
+
 	X=(char*)malloc(NX*sizeof(uint8_t));
 	Y=(char*)malloc(NY*sizeof(uint8_t));
 	for (i=0;i<NX;i++)
@@ -211,26 +219,36 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 	axY=atoi(Y);
 	//HAL_GPIO_TogglePin(LD2_GPIO_Port,LD2_Pin);
 
-	len_float_1=((float)axX/320)*75;
+	len_float_1=((float)axX/320)*10; //*50
+	//len_float_1 = 5*tan((float) axX*3.14/490) ;
 	len_int_1=(int) len_float_1;
 
-	len_float_2=((float)axY/240)*75;
+	len_float_2=((float)axY/240)*10; //*50
+	//len_float_2 = 5*tan((float) axY*3.14/490) ;
 	len_int_2=(int) len_float_2;
 
-	pwm2=(75+len_int_2);
-	pwm1=(75+len_int_1);
+	if (len_int_1 > 5 || len_int_1 < -5)
+	{len_int_1 = 0;}
+	if (len_int_2 > 5 || len_int_2 < -5)
+	{len_int_2 = 0;}
+
+	pwm1=(75-len_int_1); //X axys
+	pwm2=(75+len_int_2);  //Y axys  //75 half power
+
 	//len=snprintf(NULL,0,"%d",pwm);
 	//mex=(char*)malloc((len+1)*sizeof(uint8_t));
 	//snprintf(mex,len+1,"%d",pwm);
 	//itoa(pwm,mex,10);
-	htim2.Instance->CCR2=pwm2;
-	htim2.Instance->CCR1=pwm1;
+	//snprintf(Tx_Data,10,"%d%d",pwm1,pwm2);
 
-	//HAL_UART_Transmit(&huart2,mex,len+1,100);
-	//free(mex);
+	htim2.Instance->CCR1=pwm1;
+	htim2.Instance->CCR2=pwm2;
+
+	//HAL_UART_Transmit(&huart2,Tx_Data,sizeof(Tx_Data),10);
+	//free(Tx_Data);
+
 	free(X);
 	free(Y);
-
 
 }
 /* USER CODE END 4 */
